@@ -11,12 +11,13 @@ MESINFO="${CYAN}${BOLD}[INFO]${NC}"
 MESERRO="${RED}${BOLD}[ERRO]${NC}"
 
 usage() {
-    echo -e "${YELLOW}Uso:${NC} $0 --mal | --proc"
+    echo -e "${YELLOW}Uso:${NC} $0 --all"
     exit 1
 }
 
 check_malware() {
-    echo -e "${MESINFO} Iniciando varredura rápida"
+    echo -e "${MESINFO} Iniciando varredura rápida${NC}"
+
     MALICIOUS_PATTERNS=(
         "00.php"
         "11.php"
@@ -35,20 +36,21 @@ check_malware() {
         "z.php"
     )
 
-    for pattern in "${MALICIOUS_PATTERNS[@]}"; do
-        find "$PWD" -type f -name "$pattern" -print -quit 2>/dev/null | grep -q .
-        if [[ $? -eq 0 ]]; then
-            echo -e "${RED}${BOLD}INFECÇÃO DETECTADA${NC}"
-            return
-        fi
-    done
+    FILES_TO_SCAN=$(find "$PWD" -type f 2>/dev/null | head -n 50)
 
-    echo -e "${GREEN}${BOLD}Nenhuma infecção detectada${NC}"
-}
+    MATCHES=0
 
-check_process() {
-    echo -e "${MESINFO} Processo consumindo mais recursos"
-    ps -eo pid,ppid,cmd,%cpu,%mem --sort=-%cpu | head -n 5
+    while read -r file; do
+        for pattern in "${MALICIOUS_PATTERNS[@]}"; do
+            [[ "$(basename "$file")" == "$pattern" ]] && ((MATCHES++))
+            [[ $MATCHES -ge 3 ]] && {
+                echo -e "${RED}${BOLD}⚠ INFECÇÃO DETECTADA${NC}"
+                return
+            }
+        done
+    done <<< "$FILES_TO_SCAN"
+
+    echo -e "${GREEN}${BOLD}✓ Nenhum sinal de infecção detectado${NC}"
 }
 
 ACTION="$1"
@@ -56,11 +58,8 @@ ACTION="$1"
 [[ -z "$ACTION" ]] && usage
 
 case "$ACTION" in
-    --mal|--malware)
+    --all)
         check_malware
-        ;;
-    --proc|--process)
-        check_process
         ;;
     *)
         usage
