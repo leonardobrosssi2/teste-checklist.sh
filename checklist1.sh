@@ -35,14 +35,15 @@ check_full_scan() {
 check_process() {
     echo -e "${MESINFO} Processos que mais consomem CPU e RAM"
 
-    # Apenas processos do usuário
     ps -u "$USER" -o pid,ppid,%cpu,%mem,cmd --sort=-%cpu | head -n 10
 
     echo ""
     echo -e "${CYAN}${BOLD}Processo mais pesado${NC}"
 
-    # Segunda linha do ps do usuário (primeira é cabeçalho)
-    ps -u "$USER" -o pid,%cpu,%mem,cmd --sort=-%cpu | sed -n '2p'
+    ps -u "$USER" -o pid,%cpu,%mem,cmd --sort=-%cpu \
+        | grep -v "CMD" \
+        | grep -v "bash /dev/fd" \
+        | head -n 1
 
     echo ""
 }
