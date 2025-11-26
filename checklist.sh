@@ -1,61 +1,55 @@
 #!/bin/bash
 
-RED="\e[31m"; GREEN="\e[32m"; YELLOW="\e[33m"; CYAN="\e[36m"; NC="\e[0m"; BOLD="\e[1m"
+RED="\e[31m"
+GREEN="\e[32m"
+YELLOW="\e[33m"
+CYAN="\e[36m"
+NC="\e[0m"
+BOLD="\e[1m"
+
 MESINFO="${CYAN}${BOLD}[INFO]${NC}"
 MESERRO="${RED}${BOLD}[ERRO]${NC}"
 
 usage() {
-    echo -e "${YELLOW}Uso:${NC} $0 --mal | --all | --proc"
+    echo -e "${YELLOW}Uso:${NC} $0 --mal | --proc | --all"
     exit 1
 }
 
 check_malware() {
-    echo -e "${MESINFO} Iniciando varredura rápida${NC}"
-    MALICIOUS_PATTERNS=( "00.php" "11.php" "66.php" "89.php" "vc.php" "x1.php" "xxx.php" "txets.php" "sl.php" "shell.php" "up.php" "mailer.php" "bypass.php" "configxx.php" "z.php" )
-    INFECTED=0; FOUND_THRESHOLD=3; SCAN_LIMIT=50; COUNT=0
-
-    for file in $(find "$PWD" -type f | head -n $SCAN_LIMIT); do
-        ((COUNT++))
-        name=$(basename "$file")
-        for pattern in "${MALICIOUS_PATTERNS[@]}"; do
-            [[ "$name" == "$pattern" ]] && ((INFECTED++))
+    MALICIOUS_PATTERNS=("00.php" "11.php" "66.php" "89.php" "vc.php" "x1.php" "xxx.php" "txets.php" "sl.php" "shell.php" "up.php" "mailer.php" "bypass.php" "configxx.php" "z.php")
+    echo -e "${MESINFO} Varredura malware:"
+    FILES=($(find "$PWD" -type f | head -n 50))
+    COUNT=0
+    for f in "${FILES[@]}"; do
+        for p in "${MALICIOUS_PATTERNS[@]}"; do
+            [[ "$f" == *"$p" ]] && COUNT=$((COUNT+1))
+            [[ $COUNT -ge 3 ]] && echo -e "⚠ INFECTADO" && return
         done
-        [[ $INFECTED -ge $FOUND_THRESHOLD ]] && echo -e "${RED}${BOLD}⚠ INFECTADO${NC}" && return
     done
-
-    echo -e "${GREEN}${BOLD}✓ Sem malwares nos primeiros $SCAN_LIMIT arquivos${NC}"
+    echo -e "${GREEN}✓ Limpo${NC}"
 }
 
-check_malware_all() {
-    echo -e "${MESINFO} Iniciando varredura completa${NC}"
-    MALICIOUS_PATTERNS=( "00.php" "11.php" "66.php" "89.php" "vc.php" "x1.php" "xxx.php" "txets.php" "sl.php" "shell.php" "up.php" "mailer.php" "bypass.php" "configxx.php" "z.php" )
-    INFECTED=0; FOUND_THRESHOLD=3
-
-    while IFS= read -r file; do
-        name=$(basename "$file")
-        for pattern in "${MALICIOUS_PATTERNS[@]}"; do
-            [[ "$name" == "$pattern" ]] && ((INFECTED++))
-        done
-        [[ $INFECTED -ge $FOUND_THRESHOLD ]] && echo -e "${RED}${BOLD}⚠ INFECTADO${NC}" && return
-    done < <(find "$PWD" -type f)
-
-    echo -e "${GREEN}${BOLD}✓ Sem malwares encontrados${NC}"
-}
-
-check_process() {
-    echo -e "${MESINFO} Processos que mais consomem CPU e RAM:${NC}"
-    ps -eo pid,ppid,user,%cpu,%mem,cmd --sort=-%cpu | head -n 10
+check_processes() {
+    echo -e "${MESINFO} Processos que mais consomem CPU/RAM:"
+    ps -eo pid,user,%cpu,%mem,cmd --sort=-%cpu | head -n 10
+    TOPPID=$(ps -eo pid,%cpu,%mem,cmd --sort=-%cpu | sed -n '2p')
     echo ""
-    echo -e "${CYAN}${BOLD}Processo mais pesado:${NC}"
-    ps -eo pid,%cpu,%mem,cmd --sort=-%mem | head -n 1
-    echo ""
+    echo -e "${MESINFO} Processo mais pesado:"
+    echo "$TOPPID"
 }
 
 ACTION="$1"
+[[ -z "$ACTION" ]] && usage
 
 case "$ACTION" in
     --mal) check_malware ;;
-    --all) check_malware_all ;;
-    --proc) check_process ;;
+    --proc) check_processes ;;
+    --all)
+        echo -e "${CYAN}${BOLD}==== CHECK MALWARE ====${NC}"
+        check_malware
+        echo ""
+        echo -e "${CYAN}${BOLD}==== CHECK PROCESSOS ====${NC}"
+        check_processes
+        ;;
     *) usage ;;
 esac
