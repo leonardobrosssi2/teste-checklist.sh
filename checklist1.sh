@@ -25,6 +25,7 @@ check_full_scan() {
 
 run_all() {
     echo -e "${MESINFO} Iniciando varredura completa do sistema"
+    echo -e "${MESINFO} Varredura completa"
 
     check_full_scan
     FULL=$?
