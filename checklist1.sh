@@ -32,31 +32,11 @@ check_full_scan() {
     return 0
 }
 
-check_process() {
-    echo -e "${MESINFO} Processos que mais consomem CPU e RAM"
-
-    ps -u "$USER" -o pid,ppid,%cpu,%mem,cmd --sort=-%cpu | head -n 10
-
-    echo ""
-    echo -e "${CYAN}${BOLD}Processo mais pesado${NC}"
-
-    ps -u "$USER" -o pid,%cpu,%mem,cmd --sort=-%cpu \
-        | grep -v "CMD" \
-        | grep -v "bash /dev/fd" \
-        | grep -v "ps -u" \
-        | head -n 1
-
-    echo ""
-}
-
 run_all() {
     echo -e "${MESINFO} Iniciando varredura completa do sistema"
 
     check_full_scan
     FULL=$?
-
-    echo ""
-    check_process
 
     echo ""
     if [[ $FULL -eq 1 ]]; then
