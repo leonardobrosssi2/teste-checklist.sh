@@ -34,7 +34,7 @@ check_full_scan() {
 
 check_process() {
     echo -e "${MESINFO} Processos que mais consomem CPU e RAM"
-    ps -eo pid,ppid,user,%cpu,%mem,cmd --sort=-%cpu | head -n 10
+ps -u $USER -o pid,ppid,%cpu,%mem,cmd --sort=-%cpu | head -n 10
     echo ""
     echo -e "${CYAN}${BOLD}Processo mais pesado${NC}"
     ps -eo pid,%cpu,%mem,cmd --sort=-%mem | head -n 1
