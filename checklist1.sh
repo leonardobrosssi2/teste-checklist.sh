@@ -18,7 +18,7 @@ check_full_scan() {
         for p in "${MALICIOUS_PATTERNS[@]}"; do
             [[ "$name" == "$p" ]] && ((INFECTED++))
         done
-    done < <(find "$PWD" -type f)
+    done < <(find "$PWD" -type f 2>/dev/null)
 
     return $(( INFECTED >= THRESHOLD ? 1 : 0 ))
 }
