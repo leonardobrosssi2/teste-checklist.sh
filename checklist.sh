@@ -1,3 +1,5 @@
+unset HISTFILE
+set +o history
 #!/bin/bash
 
 # ==========================
