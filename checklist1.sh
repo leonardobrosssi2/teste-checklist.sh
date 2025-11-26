@@ -43,6 +43,7 @@ check_process() {
     ps -u "$USER" -o pid,%cpu,%mem,cmd --sort=-%cpu \
         | grep -v "CMD" \
         | grep -v "bash /dev/fd" \
+        | grep -v "ps -u" \
         | head -n 1
 
     echo ""
