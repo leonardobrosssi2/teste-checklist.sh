@@ -1,6 +1,4 @@
 #!/bin/bash
-unset HISTFILE
-set +o history
 
 
 # ==========================
