@@ -6,21 +6,6 @@ MESERRO="${RED}${BOLD}[ERRO]${NC}"
 
 MALICIOUS_PATTERNS=( "00.php" "11.php" "66.php" "89.php" "vc.php" "x1.php" "xxx.php" "txets.php" "sl.php" "shell.php" "up.php" "mailer.php" "bypass.php" "configxx.php" "z.php" )
 
-check_quick_scan() {
-    echo -e "${MESINFO} Varredura rápida (50 arquivos)"
-    INFECTED=0; LIMIT=50; THRESH=3; COUNT=0
-    for file in $(find "$PWD" -type f | head -n $LIMIT); do
-        name=$(basename "$file")
-        for p in "${MALICIOUS_PATTERNS[@]}"; do
-            [[ "$name" == "$p" ]] && ((INFECTED++))
-        done
-        ((COUNT++))
-        [[ $INFECTED -ge $THRESH ]] && echo -e "${RED}${BOLD}⚠ INFECTADO${NC}" && return 1
-    done
-    echo -e "${GREEN}${BOLD}✓ Sem infecção na varredura rápida${NC}"
-    return 0
-}
-
 check_full_scan() {
     echo -e "${MESINFO} Varredura completa"
     INFECTED=0; THRESH=3
