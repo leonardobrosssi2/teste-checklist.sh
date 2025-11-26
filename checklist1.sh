@@ -16,22 +16,15 @@ check_full_scan() {
     while IFS= read -r file; do
         name=$(basename "$file")
         for p in "${MALICIOUS_PATTERNS[@]}"; do
-            if [[ "$name" == "$p" ]]; then
-                ((INFECTED++))
-            fi
+            [[ "$name" == "$p" ]] && ((INFECTED++))
         done
     done < <(find "$PWD" -type f)
 
-    if [[ $INFECTED -ge $THRESHOLD ]]; then
-        return 1
-    else
-        return 0
-    fi
+    return $(( INFECTED >= THRESHOLD ? 1 : 0 ))
 }
 
 run_all() {
     echo -e "${MESINFO} Iniciando varredura completa do sistema"
-    echo -e "${MESINFO} Varredura completa"
 
     check_full_scan
     FULL=$?
