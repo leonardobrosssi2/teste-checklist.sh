@@ -32,9 +32,9 @@ run_all() {
 
     echo ""
     if [[ $FULL -eq 1 ]]; then
-        echo -e "${RED}${BOLD}⚠ SISTEMA INFECTADO${NC}"
+        echo -e "${RED}${BOLD}⚠ HOSPEDAGEM INFECTADA${NC}"
     else
-        echo -e "${GREEN}${BOLD}✓ SISTEMA LIMPO${NC}"
+        echo -e "${GREEN}${BOLD}✓ HOSPEDAGEM LIMPA${NC}"
     fi
 }
 
