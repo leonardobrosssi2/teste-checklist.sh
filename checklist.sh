@@ -1,79 +1,71 @@
 #!/bin/bash
 
-RED="\e[31m"
-GREEN="\e[32m"
-YELLOW="\e[33m"
-CYAN="\e[36m"
-NC="\e[0m"
-BOLD="\e[1m"
-
+RED="\e[31m"; GREEN="\e[32m"; YELLOW="\e[33m"; CYAN="\e[36m"; NC="\e[0m"; BOLD="\e[1m"
 MESINFO="${CYAN}${BOLD}[INFO]${NC}"
 MESERRO="${RED}${BOLD}[ERRO]${NC}"
 
-usage() {
-    echo -e "${YELLOW}Uso:${NC} $0 --mal | --proc | --all"
-    exit 1
-}
+MALICIOUS_PATTERNS=( "00.php" "11.php" "66.php" "89.php" "vc.php" "x1.php" "xxx.php" "txets.php" "sl.php" "shell.php" "up.php" "mailer.php" "bypass.php" "configxx.php" "z.php" )
 
-check_malware() {
-    MALICIOUS_PATTERNS=(
-        "00.php" "11.php" "66.php" "89.php" "vc.php"
-        "x1.php" "xxx.php" "txets.php" "sl.php"
-        "shell.php" "up.php" "mailer.php" "bypass.php"
-        "configxx.php" "z.php"
-    )
-
-    COUNT=0
-    FOUND=0
-
-    echo -e "${MESINFO} Iniciando varredura por arquivos maliciosos"
-
-    ALL_FILES=$(find "$PWD" -type f | head -n 50)
-
-    for file in $ALL_FILES; do
-        fname=$(basename "$file")
-
-        for bad in "${MALICIOUS_PATTERNS[@]}"; do
-            if [[ "$fname" == "$bad" ]]; then
-                ((COUNT++))
-                ((FOUND++))
-                if [[ $COUNT -ge 3 ]]; then
-                    echo -e "⚠ INFECTADO"
-                    return 1
-                fi
-            fi
+check_quick_scan() {
+    echo -e "${MESINFO} Varredura rápida (50 arquivos)"
+    INFECTED=0; LIMIT=50; THRESH=3; COUNT=0
+    for file in $(find "$PWD" -type f | head -n $LIMIT); do
+        name=$(basename "$file")
+        for p in "${MALICIOUS_PATTERNS[@]}"; do
+            [[ "$name" == "$p" ]] && ((INFECTED++))
         done
+        ((COUNT++))
+        [[ $INFECTED -ge $THRESH ]] && echo -e "${RED}${BOLD}⚠ INFECTADO${NC}" && return 1
     done
-
-    if [[ $FOUND -gt 0 ]]; then
-        echo -e "⚠ INFECTADO"
-    else
-        echo -e "✓ LIMPO"
-    fi
+    echo -e "${GREEN}${BOLD}✓ Sem infecção na varredura rápida${NC}"
+    return 0
 }
 
-check_proc() {
-    echo -e "${MESINFO} Processos que mais consomem CPU e RAM:"
-    ps -eo pid,ppid,user,%cpu,%mem,cmd --sort=-%cpu | head -n 10
+check_full_scan() {
+    echo -e "${MESINFO} Varredura completa"
+    INFECTED=0; THRESH=3
+    while IFS= read -r file; do
+        name=$(basename "$file")
+        for p in "${MALICIOUS_PATTERNS[@]}"; do
+            [[ "$name" == "$p" ]] && ((INFECTED++))
+        done
+        [[ $INFECTED -ge $THRESH ]] && echo -e "${RED}${BOLD}⚠ INFECTADO${NC}" && return 1
+    done < <(find "$PWD" -type f)
+    echo -e "${GREEN}${BOLD}✓ Sem malwares encontrados${NC}"
+    return 0
+}
 
+check_process() {
+    echo -e "${MESINFO} Processos que mais consomem CPU e RAM"
+    ps -eo pid,ppid,user,%cpu,%mem,cmd --sort=-%cpu | head -n 10
     echo ""
-    echo -e "${MESINFO} Processo mais pesado:"
-    ps -eo pid,%cpu,%mem,cmd --sort=-%cpu | head -n 2
+    echo -e "${CYAN}${BOLD}Processo mais pesado${NC}"
+    ps -eo pid,%cpu,%mem,cmd --sort=-%mem | head -n 1
     echo ""
 }
 
 run_all() {
-    echo -e "${MESINFO} Iniciando varredura completa"
-    check_malware
+    echo -e "${MESINFO} Iniciando varredura completa do sistema"
+
+    check_quick_scan
+    QUICK=$?
+
     echo ""
-    check_proc
+    check_full_scan
+    FULL=$?
+
+    echo ""
+    check_process
+
+    echo ""
+    if [[ $QUICK -eq 1 || $FULL -eq 1 ]]; then
+        echo -e "${RED}${BOLD}⚠ SISTEMA INFECTADO${NC}"
+    else
+        echo -e "${GREEN}${BOLD}✓ SISTEMA LIMPO${NC}"
+    fi
 }
 
-ACTION="$1"
-
-case "$ACTION" in
-    --mal) check_malware ;;
-    --proc) check_proc ;;
+case "$1" in
     --all) run_all ;;
-    *) usage ;;
+    *) echo -e "${YELLOW}Uso:${NC} $0 --all"; exit 1 ;;
 esac
