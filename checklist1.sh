@@ -10,35 +10,32 @@ MALICIOUS_PATTERNS=(
 )
 
 check_full_scan() {
-    echo -e "${MESINFO} Varredura completa"
-    INFECTED_FILES=()
+    INFECTED=0
+    THRESHOLD=3
 
     while IFS= read -r file; do
         name=$(basename "$file")
         for p in "${MALICIOUS_PATTERNS[@]}"; do
             if [[ "$name" == "$p" ]]; then
-                INFECTED_FILES+=("$file")
+                ((INFECTED++))
             fi
         done
     done < <(find "$PWD" -type f)
 
-    if [[ ${#INFECTED_FILES[@]} -ge 3 ]]; then
-        echo -e "${RED}${BOLD}⚠ INFECTADO${NC}"
-        echo -e "${RED}Arquivos suspeitos encontrados:${NC}"
-        for f in "${INFECTED_FILES[@]}"; do
-            echo " - $f"
-        done
+    if [[ $INFECTED -ge $THRESHOLD ]]; then
         return 1
     else
-        echo -e "${GREEN}${BOLD}✓ Sem malwares encontrados${NC}"
         return 0
     fi
 }
 
 run_all() {
     echo -e "${MESINFO} Iniciando varredura completa do sistema"
+    echo -e "${MESINFO} Varredura completa"
+
     check_full_scan
     FULL=$?
+
     echo ""
     if [[ $FULL -eq 1 ]]; then
         echo -e "${RED}${BOLD}⚠ SISTEMA INFECTADO${NC}"
