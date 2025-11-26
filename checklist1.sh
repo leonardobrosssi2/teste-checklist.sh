@@ -22,14 +22,13 @@ check_full_scan() {
                 ((INFECTED++))
             fi
         done
-        if [[ $INFECTED -ge $THRESHOLD ]]; then
-            echo -e "${RED}${BOLD}⚠ INFECTADO${NC}"
-            return 1
-        fi
     done < <(find "$PWD" -type f)
 
-    echo -e "${GREEN}${BOLD}✓ Sem malwares encontrados${NC}"
-    return 0
+    if [[ $INFECTED -ge $THRESHOLD ]]; then
+        return 1
+    else
+        return 0
+    fi
 }
 
 run_all() {
