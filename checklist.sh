@@ -11,55 +11,82 @@ MESINFO="${CYAN}${BOLD}[INFO]${NC}"
 MESERRO="${RED}${BOLD}[ERRO]${NC}"
 
 usage() {
-    echo -e "${YELLOW}Uso:${NC} $0 --all"
+    echo -e "${YELLOW}Uso:${NC} $0 --mal | --all | --proc"
     exit 1
 }
 
 check_malware() {
-    echo -e "${MESINFO} Iniciando varredura rápida${NC}"
-
     MALICIOUS_PATTERNS=(
-        "00.php"
-        "11.php"
-        "66.php"
-        "89.php"
-        "vc.php"
-        "x1.php"
-        "xxx.php"
-        "txets.php"
-        "sl.php"
-        "shell.php"
-        "up.php"
-        "mailer.php"
-        "bypass.php"
-        "configxx.php"
-        "z.php"
+        "00.php" "11.php" "66.php" "89.php"
+        "vc.php" "x1.php" "xxx.php" "txets.php"
+        "sl.php" "shell.php" "up.php" "mailer.php"
+        "bypass.php" "configxx.php" "z.php"
     )
 
-    FILES_TO_SCAN=$(find "$PWD" -type f 2>/dev/null | head -n 50)
+    INFECTED_COUNT=0
+    SCAN_LIMIT=50
+    FOUND_THRESHOLD=3
 
-    MATCHES=0
-
-    while read -r file; do
+    for file in $(find "$PWD" -maxdepth 1 -type f | head -n $SCAN_LIMIT); do
         for pattern in "${MALICIOUS_PATTERNS[@]}"; do
-            [[ "$(basename "$file")" == "$pattern" ]] && ((MATCHES++))
-            [[ $MATCHES -ge 3 ]] && {
-                echo -e "${RED}${BOLD}⚠ INFECÇÃO DETECTADA${NC}"
-                return
-            }
+            if [[ "$(basename "$file")" == "$pattern" ]]; then
+                ((INFECTED_COUNT++))
+            fi
         done
-    done <<< "$FILES_TO_SCAN"
+        if [[ $INFECTED_COUNT -ge $FOUND_THRESHOLD ]]; then
+            echo -e "${RED}${BOLD}⚠ INFECÇÃO DETECTADA.${NC}"
+            return
+        fi
+    done
 
-    echo -e "${GREEN}${BOLD}✓ Nenhum sinal de infecção detectado${NC}"
+    echo -e "${GREEN}${BOLD}✓ Nenhum arquivo malicioso encontrado.${NC}"
+}
+
+check_all() {
+    MALICIOUS_PATTERNS=(
+        "00.php" "11.php" "66.php" "89.php"
+        "vc.php" "x1.php" "xxx.php" "txets.php"
+        "sl.php" "shell.php" "up.php" "mailer.php"
+        "bypass.php" "configxx.php" "z.php"
+    )
+
+    INFECTED_COUNT=0
+    FOUND_THRESHOLD=3
+
+    while IFS= read -r file; do
+        for pattern in "${MALICIOUS_PATTERNS[@]}"; do
+            if [[ "$(basename "$file")" == "$pattern" ]]; then
+                ((INFECTED_COUNT++))
+            fi
+        done
+        if [[ $INFECTED_COUNT -ge $FOUND_THRESHOLD ]]; then
+            echo -e "${RED}${BOLD}⚠ INFECÇÃO DETECTADA (VARREDURA COMPLETA).${NC}"
+            return
+        fi
+    done < <(find "$PWD" -type f)
+
+    echo -e "${GREEN}${BOLD}✓ Nenhum arquivo malicioso encontrado na varredura completa.${NC}"
+}
+
+check_process() {
+    echo -e "${MESINFO} Processos que mais consomem CPU:"
+    ps -eo pid,ppid,user,%cpu,%mem,command --sort=-%cpu | head -n 10
+    echo ""
+    echo -e "${MESINFO} Processos que mais consomem MEMÓRIA:"
+    ps -eo pid,ppid,user,%cpu,%mem,command --sort=-%mem | head -n 10
 }
 
 ACTION="$1"
 
-[[ -z "$ACTION" ]] && usage
-
 case "$ACTION" in
-    --all)
+    --mal)
         check_malware
+        ;;
+    --all)
+        check_all
+        ;;
+    --proc)
+        check_process
         ;;
     *)
         usage
