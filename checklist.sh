@@ -15,89 +15,65 @@ usage() {
     exit 1
 }
 
-# ======================
-#     MALWARE
-# ======================
 check_malware() {
-    echo -e "${MESINFO} Iniciando varredura de malware"
     MALICIOUS_PATTERNS=(
-        "00.php" "11.php" "66.php" "89.php" "vc.php" "x1.php" "xxx.php"
-        "txets.php" "sl.php" "shell.php" "up.php" "mailer.php"
-        "bypass.php" "configxx.php" "z.php"
+        "00.php" "11.php" "66.php" "89.php" "vc.php"
+        "x1.php" "xxx.php" "txets.php" "sl.php"
+        "shell.php" "up.php" "mailer.php" "bypass.php"
+        "configxx.php" "z.php"
     )
 
     COUNT=0
-    MAX_SCAN=50
     FOUND=0
 
-    FILES=$(find "$PWD" -type f | head -n $MAX_SCAN)
+    echo -e "${MESINFO} Iniciando varredura por arquivos maliciosos"
 
-    for FILE in $FILES; do
-        BASENAME=$(basename "$FILE")
-        for pattern in "${MALICIOUS_PATTERNS[@]}"; do
-            if [[ "$BASENAME" == "$pattern" ]]; then
+    ALL_FILES=$(find "$PWD" -type f | head -n 50)
+
+    for file in $ALL_FILES; do
+        fname=$(basename "$file")
+
+        for bad in "${MALICIOUS_PATTERNS[@]}"; do
+            if [[ "$fname" == "$bad" ]]; then
+                ((COUNT++))
                 ((FOUND++))
+                if [[ $COUNT -ge 3 ]]; then
+                    echo -e "⚠ INFECTADO"
+                    return 1
+                fi
             fi
         done
-        ((COUNT++))
-        [[ $FOUND -ge 3 ]] && break
     done
 
-    if [[ $FOUND -ge 3 ]]; then
-        echo -e "⚠ ${RED}${BOLD}INFECTADO${NC}"
-        return 1
+    if [[ $FOUND -gt 0 ]]; then
+        echo -e "⚠ INFECTADO"
     else
-        echo -e "✓ ${GREEN}${BOLD}LIMPO${NC}"
-        return 0
+        echo -e "✓ LIMPO"
     fi
 }
 
-# ======================
-#     PROCESSOS
-# ======================
-check_processes() {
+check_proc() {
     echo -e "${MESINFO} Processos que mais consomem CPU e RAM:"
     ps -eo pid,ppid,user,%cpu,%mem,cmd --sort=-%cpu | head -n 10
 
-    TOP=$(ps -eo pid,%cpu,%mem,cmd --sort=-%cpu | sed -n '2p')
-    echo -e "\n${MESINFO} Processo mais pesado:"
-    echo -e "$TOP"
+    echo ""
+    echo -e "${MESINFO} Processo mais pesado:"
+    ps -eo pid,%cpu,%mem,cmd --sort=-%cpu | head -n 2
+    echo ""
 }
 
-# ======================
-#     ALL
-# ======================
 run_all() {
     echo -e "${MESINFO} Iniciando varredura completa"
-
-    USER_HOME=$(eval echo ~$USER)
-
-    echo -e "\n${MESINFO} Varredura em todos os diretórios do usuário:"
-    INFECTED_GLOBAL=0
-
-    while IFS= read -r DIR; do
-        [[ -d "$DIR" ]] || continue
-        cd "$DIR" >/dev/null 2>&1
-        RESULT=$(check_malware)
-        [[ $? -ne 0 ]] && INFECTED_GLOBAL=1
-    done < <(find "$USER_HOME" -maxdepth 4 -type d)
-
-    [[ $INFECTED_GLOBAL -eq 1 ]] && echo -e "⚠ ${RED}${BOLD}INFECTADO${NC}" || echo -e "✓ ${GREEN}${BOLD}LIMPO${NC}"
-
-    echo -e "\n${MESINFO} Analisando Processos:"
-    check_processes
+    check_malware
+    echo ""
+    check_proc
 }
 
-# ======================
-# MAIN
-# ======================
 ACTION="$1"
 
-[[ -z "$ACTION" ]] && usage
-
 case "$ACTION" in
-    --mal)  check_malware ;;
-    --proc) check_processes ;;
-    --all)  run_all ;;
+    --mal) check_malware ;;
+    --proc) check_proc ;;
+    --all) run_all ;;
     *) usage ;;
 esac
