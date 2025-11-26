@@ -1,9 +1,5 @@
 #!/bin/bash
 
-
-# ==========================
-#   CORES
-# ==========================
 RED="\e[31m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
@@ -14,25 +10,13 @@ BOLD="\e[1m"
 MESINFO="${CYAN}${BOLD}[INFO]${NC}"
 MESERRO="${RED}${BOLD}[ERRO]${NC}"
 
-# ==========================
-#   USO
-# ==========================
 usage() {
-    echo -e "${YELLOW}Uso:${NC} $0 --mal"
-    echo -e "Exemplo:"
-    echo -e "  bash <(curl -sSL \"https://raw.githubusercontent.com/leonardobrosssi2/teste-checklist.sh/main/checklist.sh\") --mal"
+    echo -e "${YELLOW}Uso:${NC} $0 --mal | --proc"
     exit 1
 }
 
-# ==========================
-#   CHECK MALWARE
-# ==========================
 check_malware() {
-
-    echo ""
-    echo -e "${MESINFO} Iniciando varredura por arquivos maliciosos${NC}"
-    echo ""
-
+    echo -e "${MESINFO} Iniciando varredura rápida"
     MALICIOUS_PATTERNS=(
         "00.php"
         "11.php"
@@ -51,34 +35,22 @@ check_malware() {
         "z.php"
     )
 
-    INFECTED=0
-
-    echo -e "${CYAN}${BOLD}► Procurando arquivos suspeitos em:${NC} $PWD"
-    echo ""
-
     for pattern in "${MALICIOUS_PATTERNS[@]}"; do
-        RESULTS=$(find "$PWD" -type f -name "$pattern" 2>/dev/null)
-
-        if [[ ! -z "$RESULTS" ]]; then
-            INFECTED=1
-            echo -e "${MESERRO} Arquivos encontrados correspondendo ao padrão: ${YELLOW}$pattern${NC}"
-            echo "$RESULTS"
-            echo ""
+        find "$PWD" -type f -name "$pattern" -print -quit 2>/dev/null | grep -q .
+        if [[ $? -eq 0 ]]; then
+            echo -e "${RED}${BOLD}INFECÇÃO DETECTADA${NC}"
+            return
         fi
     done
 
-    if [[ $INFECTED -eq 1 ]]; then
-        echo -e "${RED}${BOLD}⚠ ATENÇÃO: INFECÇÃO DETECTADA.${NC}"
-    else
-        echo -e "${GREEN}${BOLD}✓ Nenhum arquivo malicioso encontrado.${NC}"
-    fi
-
-    echo ""
+    echo -e "${GREEN}${BOLD}Nenhuma infecção detectada${NC}"
 }
 
-# ==========================
-#   MAIN
-# ==========================
+check_process() {
+    echo -e "${MESINFO} Processo consumindo mais recursos"
+    ps -eo pid,ppid,cmd,%cpu,%mem --sort=-%cpu | head -n 5
+}
+
 ACTION="$1"
 
 [[ -z "$ACTION" ]] && usage
@@ -86,6 +58,9 @@ ACTION="$1"
 case "$ACTION" in
     --mal|--malware)
         check_malware
+        ;;
+    --proc|--process)
+        check_process
         ;;
     *)
         usage
