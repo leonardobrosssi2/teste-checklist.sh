@@ -44,7 +44,6 @@ check_process() {
 run_all() {
     echo -e "${MESINFO} Iniciando varredura completa do sistema"
 
-    echo ""
     check_full_scan
     FULL=$?
 
